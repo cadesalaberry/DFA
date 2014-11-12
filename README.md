@@ -6,7 +6,7 @@ string is reached, then the RE matched.
 
 For example, the regular expression `ˆ(a+b+(c|d)+)+$` can be represented by the following automaton, assuming a string alphabet of `{a, b, c, d}`.
 
-![RE example DFA](./assets/example_dfa.png)
+![RE example DFA](https://raw.githubusercontent.com/cadesalaberry/DFA/master/README.md/assets/example_dfa.png)
 
 The matching process is inherently sequential, since we need to process the string one character at a time. It may be parallelized, however, through the use of an optimistic approach.
 
