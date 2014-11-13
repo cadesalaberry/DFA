@@ -24,7 +24,7 @@ Here is an explaination of the results in relation to the number of processors i
 
 > The experiment was ran on a 4 core **Intel(R) Core(TM) i7-4790S CPU @ 3.20GHz** with hyperthreading, leaving 8 cores available. As you can see on the following graph, one optimistic thread does not lead to any speedup. Indeed, the program does close to 4 times more work than needed (there is 4 possible actions, thus 4 different paths).
 
-However when we go up to 3 optimistic threads, we can clearly see the benefits of using this optimisation, with a speedup reaching 1.2. After that, the more thread we add, the faster the execution gets. I have tried up to 256 threads, and still get a speedup.
+> However when we go up to 3 optimistic threads, we can clearly see the benefits of using this optimisation, with a speedup reaching 1.2. After that, the more thread we add, the faster the execution gets. I have tried up to 256 threads, and still get a speedup.
 
 ![Speedup Graph](https://raw.githubusercontent.com/cadesalaberry/DFA/master/assets/speedup.png)
 
