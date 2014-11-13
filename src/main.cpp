@@ -1,145 +1,128 @@
 #include <iostream>
+#include <sstream>
+
 #include <omp.h>
-#include <stdio.h>
-#include "stringBuilder.cpp"
 #include <string.h>
+#include <sys/time.h>
+
+#include "stringBuilder.cpp"
+#include "dfa.hpp"
+
+#define DBG_GET_FINAL_STATE 0
+#define CSV_OUTPUT_MICROSEC 1
+
 
 using namespace std;
 
-int getNextState(int currentState, char character) {
-    if (currentState < 0 || currentState > 4) {
-        if(character != 'a' && character != 'b' && character != 'c' && character != 'd') {
-            printf("DONT PUT CRAP DATA INTO GETNEXTSTATE\n");
-            return -1;
+int get_final_state(int state, char *actions, long int start, long int end) {
+
+    int tmp = state;
+
+    for (long int i = start; i < end; i++) {
+
+        if (DBG_GET_FINAL_STATE) {
+            stringstream out;
+            out << "state:" << actions[i] << ";action=" << tmp << "\n";
+            string s;
+            out >> s;
+            cout << s + "\n";
         }
+        tmp = get_next_state(tmp, actions[i]);
+
+        // Speeds up the program
+        if (state == 4) return 4;
     }
-    if (currentState == 0) {
-        if (character == 'a') {
-            return 1;
-        } else if (character == 'b') {
-            return 4;
-        } else if (character == 'c') {
-            return 4;
-        } else if (character == 'd') {
-            return 4;
-        }
-    } else if (currentState == 1) {
-        if (character == 'a') {
-            return 1;
-        } else if (character == 'b') {
-            return 2;
-        } else if (character == 'c') {
-            return 4;
-        } else if (character == 'd') {
-            return 4;
-        }
-    } else if (currentState == 2) {
-        if (character == 'a') {
-            return 4;
-        } else if (character == 'b') {
-            return 2;
-        } else if (character == 'c') {
-            return 3;
-        } else if (character == 'd') {
-            return 3;
-        }
-    } else if (currentState == 3) {
-        if (character == 'a') {
-            return 1;
-        } else if (character == 'b') {
-            return 4;
-        } else if (character == 'c') {
-            return 3;
-        } else if (character == 'd') {
-            return 3;
-        }
-    } else if (currentState == 4) {
-        if (character == 'a') {
-            return 4;
-        } else if (character == 'b') {
-            return 4;
-        } else if (character == 'c') {
-            return 4;
-        } else if (character == 'd') {
-            return 4;
-        }
-    }
+
+    return tmp;
 }
 
+int par_get_final_state(int thread_count, char * actions, long int string_length) {
 
+    omp_set_num_threads(thread_count);
 
-char* substr(char *from, int start, int end, char* to) {
+    int *mappings[thread_count];
 
-    memcpy(to, &from[start], end-start);
-    to[end-start] = '\0';
+    long int per_thread = string_length / thread_count;
 
-    return to;
-}
+    int next_state = 0;
+    int thread_id;
+    long int start_index, end_index;
 
-int getFinalState(int currentState, char *string, int start, int end) {
-    int state = currentState;
-    int index = start;
-
-    while (index < end) {
-        state = getNextState(state, string[index]);
-        index++;
-    }
-
-    return state;
-}
-
-int main() {
-    int i;
-    int numThreads = 4;
-    char *s = buildString();
-    int stringLength = (int)strlen(s);
-    int stringLengthPerThread = stringLength / numThreads;
-    int *mappings[numThreads];
-
-    omp_set_num_threads(numThreads);
-
-    for (i=0; i<numThreads; i++) {
-        int something[5] = {};
-        mappings[i] = something;
-    }
-    printf("Input: %s\n", s);
-
-    int firstLastState = getFinalState(0, s, 0, stringLengthPerThread);
-    int threadNum;
-    #pragma omp parallel private(threadNum)
+#pragma omp parallel private(thread_id, start_index, end_index)
     {
-        threadNum = omp_get_thread_num();
-        int startIndex = stringLengthPerThread*threadNum;
-        int endIndex = stringLengthPerThread*(threadNum+1);
+        thread_id = omp_get_thread_num();
 
-        char sub[endIndex-startIndex+1];
-        substr(s, startIndex, endIndex, sub);
+        start_index = per_thread * thread_id;
+        end_index = per_thread * (thread_id + 1);
 
-        printf("#%d doing [%d,%d]: %s\n", threadNum, startIndex, endIndex, sub);
-
-        mappings[threadNum][0] = getFinalState(0, s, startIndex, endIndex);
-        mappings[threadNum][1] = getFinalState(1, s, startIndex, endIndex);
-        mappings[threadNum][2] = getFinalState(2, s, startIndex, endIndex);
-        mappings[threadNum][3] = getFinalState(3, s, startIndex, endIndex);
+        if(thread_id == thread_count - 1)
+            end_index = string_length;
 
 
-
-    }
-    #pragma omp barrier
-
-    int nextState;
-    for (i=1; i<numThreads; i++) {
-        nextState = mappings[i][firstLastState];
-        if (nextState == 0) {
-            printf("next state is 0 but it can never be that\n");
+        if (thread_id == 0) {
+            next_state = get_final_state(0, actions, start_index, end_index);
+        } else {
+            int something[5] = {
+                    4,
+                    get_final_state(1, actions, start_index, end_index),
+                    get_final_state(2, actions, start_index, end_index),
+                    get_final_state(3, actions, start_index, end_index),
+                    4
+            };
+            mappings[thread_id] = something;
         }
-        firstLastState = mappings[i][firstLastState];
     }
 
-    //printf("Mapping[0][0]: %d\n", mappings[0][0]);
-    int finalState = getFinalState(0, s, 0, stringLength);
-    printf("Serial result: %d\n", finalState);
-    printf("Parallel result: %d\n", firstLastState);
+    for (int i = 1; i < thread_count; i++) {
+        next_state = mappings[i][next_state];
+    }
 
-    return 0;
+    return next_state;
+}
+
+int main(int argc, char* argv[]) {
+
+    // Number of optimistic threads can be passed as param
+    int thread_count = (argc > 1) ? atoi(argv[1]) : 1;
+
+    // Add the regular thread
+    thread_count++;
+
+    char *s = buildString();
+
+    long int string_length = strlen(s);
+
+
+    struct timeval par_start, par_end, seq_start, seq_end;
+
+    gettimeofday(&par_start, NULL);
+    int par_state = par_get_final_state(thread_count, s, string_length);
+    gettimeofday(&par_end, NULL);
+
+
+    gettimeofday(&seq_start, NULL);
+    int seq_state = get_final_state(0, s, 0, string_length);
+    gettimeofday(&seq_end, NULL);
+
+    if (seq_state == 3 && par_state == 3) {
+
+        long int serialTime = ((seq_end.tv_sec * 1000000 + seq_end.tv_usec)
+                - (seq_start.tv_sec * 1000000 + seq_start.tv_usec));
+        long int parallelTime = ((par_end.tv_sec * 1000000 + par_end.tv_usec)
+                - (par_start.tv_sec * 1000000 + par_start.tv_usec));
+
+        if (!CSV_OUTPUT_MICROSEC) {
+            cout << "Sequential : " << serialTime / 1000 << "ms\n";
+            cout << "  Parallel : " << parallelTime / 1000 << "ms\n";
+        } else {
+            cout << serialTime << "," << parallelTime;
+        }
+        return 0;
+
+    } else {
+        cerr << "Error: Sequential and parallel should be 3:\n";
+        cerr << "Sequential state: " << seq_state << "\n";
+        cerr << "  Parallel state: " << par_state << "\n";
+        return -1;
+    }
 }
