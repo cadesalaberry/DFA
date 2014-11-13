@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
             cout << "Sequential : " << serialTime / 1000 << "ms\n";
             cout << "  Parallel : " << parallelTime / 1000 << "ms\n";
         } else {
-            cout << serialTime << "," << parallelTime;
+            cout << thread_count << "," << serialTime << "," << parallelTime << endl;
         }
         return 0;
 
