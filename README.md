@@ -17,7 +17,9 @@ The n optimistic threads each perform matching on their own portion of the strin
 Once the normal thread reaches the end of its input fragment `i`, it looks at the mapping produced by the thread handling the next fragment `i + 1`. It knows the ending state of `i` in the DFA, and so can use the optimistic map to compute the resulting ending DFA state of the `i + 1` fragment. This repeats until the
 matching process is completed for the entire string.
 
-The implementation is done in OpenMP on top of C/C++. The example DFA shown above is hardcoded (I did not do any RE→DFA conversion), and it includes a function that generates a (very long) string that would match; an example code fragment is provided. The simulation accepts a command-line parameter for controlling the number of optimistic threads, and runs the test 10 times, timing the total matching time (excluding the string construction time). Data is shown for 0–3 optimistic threads.
+# Remarks
+
+The implementation is done in OpenMP on top of C/C++. The example DFA shown above is hardcoded (I did not do any RE→DFA conversion), and it includes a function that generates a (very long) string that would match; an example code fragment is provided. The simulation accepts a command-line parameter for controlling the number of optimistic threads, and runs the test 10 times, timing the total matching time (excluding the string construction time). Data is shown for 0–4 optimistic threads.
 
 Here is an explaination of the results in relation to the number of processors in the test hardware. Let's make sure the solution demonstrates speedup for some non-0 number of optimistic threads!
 
