@@ -22,3 +22,17 @@ The implementation is done in OpenMP on top of C/C++. The example DFA shown abov
 Here is an explaination of the results in relation to the number of processors in the test hardware. Let's make sure the solution demonstrates speedup for some non-0 number of optimistic threads!
 
 
+> The experiment was ran on a 4 core **Intel(R) Core(TM) i7-4790S CPU @ 3.20GHz** with hyperthreading, leaving 8 cores available. As you can see on the following graph, one optimistic thread does not lead to any speedup. Indeed, the program does close to 4 times more work than needed (there is 4 possible actions, thus 4 different paths).
+
+However when we go up to 3 optimistic threads, we can clearly see the benefits of using this optimisation, with a speedup reaching 1.2. After that, the more thread we add, the faster the execution gets. I have tried up to 256 threads, and still get a speedup.
+
+![Speedup Graph](https://raw.githubusercontent.com/cadesalaberry/DFA/master/assets/speedup.png)
+
+
+| thread_count | sequential | parallel | speedup     | 
+|--------------|------------|----------|-------------| 
+| 0            | 4400886    | 4375615  | 1.005775417 | 
+| 1            | 4387057    | 4260812  | 1.029629329 | 
+| 2            | 4417822    | 4244074  | 1.040938966 | 
+| 3            | 4369949    | 3652734  | 1.196350186 | 
+| 4            | 4369900    | 3325819  | 1.313931997 | 
